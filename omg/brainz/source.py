@@ -2,18 +2,24 @@ from __future__ import annotations
 from abc import abstractmethod, ABC
 from collections.abc import Sequence
 
-from omg.brainz.model import Recording, Work, Performance, WorkPart
+from omg.brainz.model import RecordingId, WorkId, WorkRecording, ParentWork, ArtistId, ArtistData
 
 
 class MusicbrainzDataSourceBase(ABC):
 
     @abstractmethod
-    def get_performances(self, recording: Recording) -> Sequence[Performance]:
-        """Get all 'Performance' objects that point to this recording."""
+    def get_recorded_work(self, recording: RecordingId) -> Sequence[WorkRecording]:
+        """Get all 'WorkRecording' objects that point to this recording."""
         pass
 
     @abstractmethod
-    def get_enclosing(self, work: Work) -> Sequence[WorkPart]:
+    def get_parent_works(self, work: WorkId) -> Sequence[ParentWork]:
         pass
 
+    @abstractmethod
+    def get_composers(self, work: WorkId) -> Sequence[ArtistId]:
+        pass
 
+    @abstractmethod
+    def get_artist_data(self, artist: ArtistId) -> ArtistData:
+        pass

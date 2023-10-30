@@ -1,45 +1,86 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import timedelta
+
+from omg.util.dates import PartialDate
 
 
 @dataclass(frozen=True)
-class Recording:
+class RecordingId:
     mbid: str
 
 
 @dataclass(frozen=True)
-class Work:
+class WorkId:
     mbid: str
 
 
 @dataclass(frozen=True)
-class Artist:
+class ArtistId:
     mbid: str
 
 
 @dataclass(frozen=True)
-class Performance:
+class WorkRecording:
     """Work-recording relation."""
-    recording: Recording
-    work: Work
+    recording: RecordingId
+    work: WorkId
 
     @staticmethod
-    def from_work_relation(recording: Recording, work_relation: dict) -> Performance:
+    def from_work_relation(recording: RecordingId, work_relation: dict) -> WorkRecording:
         """Create a Performance from a work-relation JSON object."""
-        return Performance(work=Work(work_relation['work']['id']), recording=recording)
+        return WorkRecording(work=WorkId(work_relation['work']['id']), recording=recording)
 
 
 @dataclass(frozen=True)
-class WorkPart:
-    enclosing_work: Work
-    part: Work
+class ParentWork:
+    parent_work: WorkId
+    part: WorkId
     number: int
 
     @staticmethod
-    def from_work_relation(work: Work, work_relation: dict) -> WorkPart:
-        return WorkPart(
-            enclosing_work=Work(work_relation['work']['id']),
+    def from_work_relation(work: WorkId, work_relation: dict) -> ParentWork:
+        return ParentWork(
+            parent_work=WorkId(work_relation['work']['id']),
             part=work,
             number=int(work_relation['ordering-key'])
         )
+
+
+@dataclass(frozen=True)
+class ArtistData:
+    id: ArtistId
+    name: str
+    sort: str | None
+    disambiguation: str | None
+
+
+@dataclass(frozen=True)
+class WorkData:
+    id: WorkId
+    name: str
+    disambiguation: str | None
+
+
+@dataclass(frozen=True)
+class RecordingData:
+    id: RecordingId
+    title: str
+    length: timedelta
+    disambiguation: str | None
+
+
+@dataclass(frozen=True)
+class RecordingArtistRelationType:
+    type: str
+    attributes: Sequence[str] = tuple()
+
+
+@dataclass(frozen=True)
+class RecordingArtistRelation:
+    recording: RecordingId
+    artist: ArtistId
+    end_date: PartialDate | None
+    type: RecordingArtistRelationType
