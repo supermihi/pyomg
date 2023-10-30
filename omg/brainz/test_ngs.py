@@ -3,7 +3,7 @@ from datetime import timedelta
 import pytest
 
 from omg.brainz.model import RecordingId, WorkId, WorkRecording, ParentWork, ArtistId, ArtistData, WorkData, \
-    RecordingData, RecordingArtistRelation, RecordingArtistRelationType
+    RecordingData, RecordingArtistRelation, RecordingArtistRelationType, ReleaseId
 from omg.brainz.ngs import MusicbrainzNgsDataSource
 from omg.util.dates import PartialDate
 
@@ -12,6 +12,7 @@ rach3_mvmt2 = WorkId('3daf2401-b558-3212-b70e-cb738749e02d')
 argerich_rach3_mvmt1 = RecordingId('c2f6529a-bb42-41e6-b98a-a0431c19f24a')
 rach3 = WorkId('21b5596b-5b70-320c-bf3f-c7285f770783')
 rach = ArtistId('44b16e44-da77-4580-b851-0d765904573e')
+argerich_rach3_tchaik1 = ReleaseId('ad1972c6-56cc-4e04-80e9-628d3cedf7e4')
 
 
 def test_recording_performances():
@@ -75,6 +76,7 @@ def test_get_recording_data():
 
     assert result == expected
 
+
 def test_get_recording_artists():
     s = MusicbrainzNgsDataSource(preferred_locales=('de',))
     result = s.get_recording_artists(argerich_rach3_mvmt1)
@@ -99,3 +101,21 @@ def test_get_recording_artists():
     )
 
     assert set(result) == {pianist, conductor, orchestra}
+
+
+def test_get_release():
+    s = MusicbrainzNgsDataSource(preferred_locales=('de',))
+    release = s.get_release_data(argerich_rach3_tchaik1)
+
+    assert release.title == 'Rachmaninoff 3 / Tchaikovsky 1'
+    assert release.date == PartialDate(1995)
+    assert release.id == argerich_rach3_tchaik1
+
+    assert len(release.media) == 1
+    medium = release.media[0]
+
+    assert len(medium.tracks) == 6
+
+    assert medium.tracks[0].recording == argerich_rach3_mvmt1
+
+    assert len(release.credited_artists) == 5

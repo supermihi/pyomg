@@ -2,7 +2,8 @@ from __future__ import annotations
 from abc import abstractmethod, ABC
 from collections.abc import Sequence
 
-from omg.brainz.model import RecordingId, WorkId, WorkRecording, ParentWork, ArtistId, ArtistData
+from omg.brainz.model import RecordingId, WorkId, WorkRecording, ParentWork, ArtistId, ArtistData, ReleaseId, \
+    ReleaseData
 
 
 class MusicbrainzDataSourceBase(ABC):
@@ -22,4 +23,8 @@ class MusicbrainzDataSourceBase(ABC):
 
     @abstractmethod
     def get_artist_data(self, artist: ArtistId) -> ArtistData:
+        pass
+
+    @abstractmethod
+    def get_release_data(self, release: ReleaseId) -> ReleaseData:
         pass

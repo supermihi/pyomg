@@ -7,7 +7,7 @@ import musicbrainzngs
 
 from omg.brainz.aliases import get_alias, Alias
 from omg.brainz.model import RecordingId, WorkId, WorkRecording, ParentWork, ArtistId, ArtistData, WorkData, \
-    RecordingData, RecordingArtistRelation, RecordingArtistRelationType
+    RecordingData, RecordingArtistRelation, RecordingArtistRelationType, ReleaseId, ReleaseData, MediumData, TrackData
 from omg.util.dates import PartialDate
 from omg.brainz.source import MusicbrainzDataSourceBase
 
@@ -16,7 +16,6 @@ class MusicbrainzNgsDataSource(MusicbrainzDataSourceBase):
 
     def __init__(self, preferred_locales: Sequence[str] = ('de', 'en')):
         self.preferred_locales = preferred_locales
-        # musicbrainzngs.set_hostname('localhost', use_https=False)
 
     def get_recorded_work(self, recording: RecordingId) -> Sequence[WorkRecording]:
         result = musicbrainzngs.get_recording_by_id(recording.mbid, includes=['work-rels'])
@@ -66,6 +65,33 @@ class MusicbrainzNgsDataSource(MusicbrainzDataSourceBase):
             relations.append(RecordingArtistRelation(recording, artist, type=relation_type,
                                                      end_date=PartialDate.parse(relation.get('end'))))
         return relations
+
+    def get_release_data(self, release: ReleaseId) -> ReleaseData:
+        result = musicbrainzngs.get_release_by_id(release.mbid, includes=['media', 'recordings', 'artists'])['release']
+        artists = parse_release_artists(result)
+        media = tuple(parse_medium(m) for m in result['medium-list'])
+        return ReleaseData(id=release, title=result['title'],
+                           date=PartialDate.parse(result['date']),
+                           media=media,
+                           credited_artists=artists)
+
+
+def parse_medium(medium: dict) -> MediumData:
+    return MediumData(position=medium['position'], format=medium['format'],
+                      tracks=tuple(parse_track(t) for t in medium['track-list']))
+
+
+def parse_track(track: dict) -> TrackData:
+    return TrackData(position=track['position'], recording=RecordingId(track['recording']['id']),
+                     track_id=track['id'])
+
+
+def parse_release_artists(release: dict) -> Sequence[ArtistId]:
+    result = []
+    for artist_credit in release['artist-credit']:
+        if isinstance(artist_credit, dict) and 'artist' in artist_credit:
+            result.append(artist_credit['artist']['id'])
+    return tuple(result)
 
 
 def is_performance(work_relation: dict) -> bool:

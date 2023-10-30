@@ -23,6 +23,11 @@ class ArtistId:
 
 
 @dataclass(frozen=True)
+class ReleaseId:
+    mbid: str
+
+
+@dataclass(frozen=True)
 class WorkRecording:
     """Work-recording relation."""
     recording: RecordingId
@@ -70,6 +75,29 @@ class RecordingData:
     title: str
     length: timedelta
     disambiguation: str | None
+
+
+@dataclass(frozen=True)
+class TrackData:
+    position: int
+    recording: RecordingId
+    track_id: str
+
+
+@dataclass(frozen=True)
+class MediumData:
+    position: int
+    format: str
+    tracks: Sequence[TrackData]
+
+
+@dataclass(frozen=True)
+class ReleaseData:
+    id: ReleaseId
+    title: str
+    credited_artists: Sequence[ArtistId]
+    date: PartialDate
+    media: Sequence[MediumData]
 
 
 @dataclass(frozen=True)
