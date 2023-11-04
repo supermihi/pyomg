@@ -1,10 +1,12 @@
 from datetime import timedelta
 
 import pytest
+import requests_cache
+from _pytest.fixtures import SubRequest
 
 from omg.brainz.model import RecordingId, WorkId, WorkRecording, ParentWork, ArtistId, ArtistData, WorkData, \
     RecordingData, RecordingArtistRelation, RecordingArtistRelationType, ReleaseId
-from omg.brainz.ngs import MusicbrainzNgsDataSource
+from omg.brainz.api import MusicbrainzApiDataSource, MusicbrainzConfiguration
 from omg.util.dates import PartialDate
 
 rach3_mvmt1 = WorkId('e55e8d47-c07a-31f5-90e4-404b8e975255')
@@ -15,10 +17,27 @@ rach = ArtistId('44b16e44-da77-4580-b851-0d765904573e')
 argerich_rach3_tchaik1 = ReleaseId('ad1972c6-56cc-4e04-80e9-628d3cedf7e4')
 
 
-def test_recording_performances():
-    b = MusicbrainzNgsDataSource()
+@pytest.fixture(scope='session')
+def caching_session(testdata):
+    test_cache = testdata / 'requests_cache.sqlite'
+    session = requests_cache.CachedSession(test_cache, backend='sqlite')
 
-    works = b.get_recorded_work(argerich_rach3_mvmt1)
+
+@pytest.fixture
+def musicbrainz_source(request: SubRequest, caching_session):
+    config = MusicbrainzConfiguration()
+    locale_marker = request.node.get_closest_marker('locales')
+    if locale_marker is None:
+        locales = ['en', 'de']
+    else:
+        locales = locale_marker.args
+    source = MusicbrainzApiDataSource(config, preferred_locales=locales, session=caching_session)
+    return source
+
+
+@pytest.mark.locales('de', 'en')
+def test_recording_performances(musicbrainz_source):
+    works = musicbrainz_source.get_recorded_work(argerich_rach3_mvmt1)
 
     expected = WorkRecording(argerich_rach3_mvmt1, rach3_mvmt1)
 
@@ -27,9 +46,8 @@ def test_recording_performances():
 
 
 @pytest.mark.parametrize(('work', 'index'), [(rach3_mvmt1, 1), (rach3_mvmt2, 2)])
-def test_work_work(work: WorkId, index: int):
-    b = MusicbrainzNgsDataSource()
-    works = b.get_parent_works(work)
+def test_work_work(musicbrainz_source, work: WorkId, index: int):
+    works = musicbrainz_source.get_parent_works(work)
 
     expected = ParentWork(parent_work=rach3, part=work, number=index)
 
@@ -38,17 +56,16 @@ def test_work_work(work: WorkId, index: int):
 
 
 @pytest.mark.parametrize('work', (rach3_mvmt2, rach3))
-def test_get_composers(work: WorkId):
-    s = MusicbrainzNgsDataSource()
-    artists = s.get_composers(work)
+def test_get_composers(musicbrainz_source, work: WorkId):
+    artists = musicbrainz_source.get_composers(work)
 
     assert len(artists) == 1
     assert artists[0] == rach
 
 
-def test_get_artist_data():
-    s = MusicbrainzNgsDataSource(preferred_locales=('de',))
-    result = s.get_artist_data(rach)
+@pytest.mark.locales('de')
+def test_get_artist_data(musicbrainz_source):
+    result = musicbrainz_source.get_artist_data(rach)
 
     expected = ArtistData(id=rach, name='Sergei Rachmaninow',
                           sort='Rachmaninow, Sergei', disambiguation='Russian composer')
@@ -56,9 +73,8 @@ def test_get_artist_data():
     assert result == expected
 
 
-def test_get_work_data():
-    s = MusicbrainzNgsDataSource(preferred_locales=('de',))
-    result = s.get_work_data(rach3_mvmt2)
+def test_get_work_data(musicbrainz_source):
+    result = musicbrainz_source.get_work_data(rach3_mvmt2)
     expected = WorkData(id=rach3_mvmt2,
                         name='Konzert für Klavier und Orchester Nr. 3 D-Moll, Op. 30: II. Intermezzo. Adagio',
                         disambiguation=None)
@@ -66,9 +82,8 @@ def test_get_work_data():
     assert result == expected
 
 
-def test_get_recording_data():
-    s = MusicbrainzNgsDataSource(preferred_locales=('en', 'de'))
-    result = s.get_recording_data(argerich_rach3_mvmt1)
+def test_get_recording_data(musicbrainz_source):
+    result = musicbrainz_source.get_recording_data(argerich_rach3_mvmt1)
     expected = RecordingData(id=argerich_rach3_mvmt1,
                              title='Piano Concerto no. 3 in D minor, op. 30: I. Allegro ma non tanto',
                              length=timedelta(seconds=946),
@@ -77,9 +92,8 @@ def test_get_recording_data():
     assert result == expected
 
 
-def test_get_recording_artists():
-    s = MusicbrainzNgsDataSource(preferred_locales=('de',))
-    result = s.get_recording_artists(argerich_rach3_mvmt1)
+def test_get_recording_artists(musicbrainz_source):
+    result = musicbrainz_source.get_recording_artists(argerich_rach3_mvmt1)
 
     conductor = RecordingArtistRelation(
         artist=ArtistId('28accaf9-3a4b-4052-b9d3-8033d3137d2d'),
@@ -103,9 +117,8 @@ def test_get_recording_artists():
     assert set(result) == {pianist, conductor, orchestra}
 
 
-def test_get_release():
-    s = MusicbrainzNgsDataSource(preferred_locales=('de',))
-    release = s.get_release_data(argerich_rach3_tchaik1)
+def test_get_release(musicbrainz_source):
+    release = musicbrainz_source.get_release_data(argerich_rach3_tchaik1)
 
     assert release.title == 'Rachmaninoff 3 / Tchaikovsky 1'
     assert release.date == PartialDate(1995)

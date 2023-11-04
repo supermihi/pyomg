@@ -10,5 +10,6 @@ class MusicCollection:
     def add_recording(self, recording: RecordingId, release: ReleaseId) -> RecordingData:
         pass
 
-    def add_release(self, release: ReleaseId) -> ReleaseData:   
+    def add_release(self, release: ReleaseId) -> ReleaseData:
+        pass
 
