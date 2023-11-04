@@ -1,38 +1,11 @@
 from datetime import timedelta
 
 import pytest
-import requests_cache
-from _pytest.fixtures import SubRequest
 
-from omg.brainz.model import RecordingId, WorkId, WorkRecording, ParentWork, ArtistId, ArtistData, WorkData, \
-    RecordingData, RecordingArtistRelation, RecordingArtistRelationType, ReleaseId
-from omg.brainz.api import MusicbrainzApiDataSource, MusicbrainzConfiguration
+from omg.brainz.model import WorkId, WorkRecording, ParentWork, ArtistId, ArtistData, WorkData, \
+    RecordingData, RecordingArtistRelation, RecordingArtistRelationType
+from omg.test_utils.mbids import rach3_mvmt1, rach3_mvmt2, argerich_rach3_mvmt1, rach3, rach, argerich_rach3_tchaik1
 from omg.util.dates import PartialDate
-
-rach3_mvmt1 = WorkId('e55e8d47-c07a-31f5-90e4-404b8e975255')
-rach3_mvmt2 = WorkId('3daf2401-b558-3212-b70e-cb738749e02d')
-argerich_rach3_mvmt1 = RecordingId('c2f6529a-bb42-41e6-b98a-a0431c19f24a')
-rach3 = WorkId('21b5596b-5b70-320c-bf3f-c7285f770783')
-rach = ArtistId('44b16e44-da77-4580-b851-0d765904573e')
-argerich_rach3_tchaik1 = ReleaseId('ad1972c6-56cc-4e04-80e9-628d3cedf7e4')
-
-
-@pytest.fixture(scope='session')
-def caching_session(testdata):
-    test_cache = testdata / 'requests_cache.sqlite'
-    session = requests_cache.CachedSession(test_cache, backend='sqlite')
-
-
-@pytest.fixture
-def musicbrainz_source(request: SubRequest, caching_session):
-    config = MusicbrainzConfiguration()
-    locale_marker = request.node.get_closest_marker('locales')
-    if locale_marker is None:
-        locales = ['en', 'de']
-    else:
-        locales = locale_marker.args
-    source = MusicbrainzApiDataSource(config, preferred_locales=locales, session=caching_session)
-    return source
 
 
 @pytest.mark.locales('de', 'en')
@@ -129,6 +102,6 @@ def test_get_release(musicbrainz_source):
 
     assert len(medium.tracks) == 6
 
-    assert medium.tracks[0].recording == argerich_rach3_mvmt1
+    assert medium.tracks[0].recording_id == argerich_rach3_mvmt1
 
     assert len(release.credited_artists) == 5

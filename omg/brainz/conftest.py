@@ -1,1 +1,1 @@
-from omg.conftest import testdata
+from omg.conftest import testdata, musicbrainz_source

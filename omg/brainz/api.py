@@ -109,7 +109,7 @@ def parse_medium(medium: dict) -> MediumData:
 
 
 def parse_track(track: dict) -> TrackData:
-    return TrackData(position=track['position'], recording=RecordingId(track['recording']['id']),
+    return TrackData(position=track['position'], recording_id=RecordingId(track['recording']['id']),
                      track_id=track['id'])
 
 
@@ -117,7 +117,7 @@ def parse_release_artists(release: dict) -> Sequence[ArtistId]:
     result = []
     for artist_credit in release['artist-credit']:
         if isinstance(artist_credit, dict) and 'artist' in artist_credit:
-            result.append(artist_credit['artist']['id'])
+            result.append(ArtistId(artist_credit['artist']['id']))
     return tuple(result)
 
 

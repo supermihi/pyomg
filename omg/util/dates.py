@@ -9,6 +9,13 @@ class PartialDate:
     month: int | None = None
     day: int | None = None
 
+    def __str__(self):
+        if self.month is None:
+            return str(self.year)
+        if self.day is None:
+            return f'{self.year}-{self.month}'
+        return f'{self.year}-{self.month}-{self.day}'
+
     @staticmethod
     def parse(date: str):
         parts = date.split('-')

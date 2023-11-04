@@ -11,6 +11,9 @@ from omg.util.dates import PartialDate
 class RecordingId:
     mbid: str
 
+@dataclass(frozen=True)
+class TrackId:
+    mbid: str
 
 @dataclass(frozen=True)
 class WorkId:
@@ -24,6 +27,7 @@ class ArtistId:
 
 @dataclass(frozen=True)
 class ReleaseId:
+    """Musicbraniz release id."""
     mbid: str
 
 
@@ -80,8 +84,8 @@ class RecordingData:
 @dataclass(frozen=True)
 class TrackData:
     position: int
-    recording: RecordingId
-    track_id: str
+    recording_id: RecordingId
+    track_id: TrackId
 
 
 @dataclass(frozen=True)
